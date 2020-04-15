@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Main Name="FASMAMOS2" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="process.xsd">
+  <Resources>
+    <Resource Name="Part" Type="Logical">
+      <States>
+        <State ID="1" Name="IO"/>
+      </States>
+    </Resource>
+
+    <Resource Name="Gripper" Type="Tool">
+      <SkillDefinitions>
+        <SkillDefinition Name="Open" TimeRequired="100">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false" />
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Closed" BoolValue="false" />
+            <Condition Resource="Self" State="Open" BoolValue="true" />
+            <!--Same as 2 above conditions-->
+            <Condition Statement="Self|Closed==false
+                              OR Self|Open==true AND (Self|Closed==false
+                              OR Self|Open==false)"/>
+          </FinishedConditions>
+        </SkillDefinition>
+        <SkillDefinition Name="Close" TimeRequired="100">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false" />
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Closed" BoolValue="true" />
+            <Condition Resource="Self" State="Open" BoolValue="false" />
+          </FinishedConditions>
+        </SkillDefinition>
+        <SkillDefinition Name="ErrorQuit" TimeRequired="500">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State ID="-1" Name="Error"/>
+        <State ID="0" Name="Undefined"/>
+        <State ID="1" Name="Opened"/>
+        <State ID="2" Name="Closed"/>
+      </States>
+    </Resource>
+    <Resource Name="SCARA" Type="Tool">
+      <SkillDefinitions>
+        <SkillDefinition Name="MoveHome" Parameters="PathNumber" TimeRequired="500">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false" />
+            <Condition Resource="Self" State="Moving" BoolValue="false" />
+            <Condition Resource="Self" State="InPosition" BoolValue="true" />
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Moving" BoolValue="false" />
+            <Condition Resource="Self" State="InPosition" BoolValue="true" />
+            <Condition Resource="Self" State="Position == Home" BoolValue="true"/>
+            <!--Home Position möglicherweise als virtuelle Resource?-->
+          </FinishedConditions>
+        </SkillDefinition>
+        <SkillDefinition Name="Move" Parameters="Source,Target,PathNumber" TimeRequired="500">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false" />
+            <Condition Resource="Self" State="Moving" BoolValue="false" />
+            <Condition Resource="Self" State="InPosition" BoolValue="true" />
+            <Condition Resource="Self" State="Position" BoolValue="Source.Position"/>
+            <Condition Resource="Target" State="IsOccupied" BoolValue="false"/>
+            <Condition Resource="Target" State="InPosition" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Moving" BoolValue="false" />
+            <Condition Resource="Self" State="InPosition" BoolValue="true" />
+            <Condition Resource="Self" State="Position == Target" BoolValue="true"/>
+          </FinishedConditions>
+        </SkillDefinition>
+        <SkillDefinition Name="ErrorQuit" TimeRequired="1000">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State ID="-1" Name="Error"/>
+        <State ID="0" Name="InPosition"/>
+        <State ID="1" Name="Moving"/>
+      </States>
+    </Resource>
+
+    <Resource Name="Nest01" Type="Storage">
+      <States>
+        <State Name ="Empty" ID="0"/>
+        <State Name="Occupied" ID="1"/>
+      </States>
+    </Resource>
+    <Resource Name="Nest06" Type="Storage">
+      <States>
+        <State Name ="Empty" ID="0"/>
+        <State Name="Occupied" ID="1"/>
+      </States>
+    </Resource>
+    <Resource Name="Tray" Type="Storage">
+      <States>
+        <State Name ="Empty" ID="0"/>
+        <State Name="Occupied" ID="1"/>
+      </States>
+    </Resource>
+
+    <Resource Name="Seperation" Type="Tool">
+      <SkillDefinitions>
+        <SkillDefinition Name="Seperate" Parameters="" TimeRequired="200">
+          <StartConditions>
+            <Condition Resource="Self" State="AtSeperation" BoolValue="false"/>
+            <Condition Resource="Self" State="PartPresent" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="AtSeperation" BoolValue="true"/>
+          </FinishedConditions>
+        </SkillDefinition>
+        <SkillDefinition Name="Input" Parameters="" TimeRequired="200">
+          <StartConditions>
+            <Condition Resource="Self" State="AtInput" BoolValue="false"/>
+            <Condition Resource="Self" State="PartPresent" BoolValue="false"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="AtInput" BoolValue="true"/>
+            <Condition Resource="Self" State="PartPresent" BoolValue="true"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State Name="Error" ID="-1"/>
+        <State Name="Unknown" ID="0"/>
+        <State Name="AtSeperation" ID="1"/>
+        <State Name="AtInput" ID="2"/>
+        <State Name="PartPresent" ID="3"/>
+        <State Name="AreaOccupied" ID="4"/>
+      </States>
+    </Resource>
+    <Resource Name="RIT" Type="Group">
+      <SkillDefinitions>
+        <SkillDefinition Name="Turn" Parameters="TurnValue" TimeRequired="300">
+          <StartConditions>
+            <Condition Resource="Self" State="IsMoving" BoolValue="false"/>
+            <Condition Resource="Self" State="InPosition" BoolValue="true"/>
+            <Condition Resource="Nest01" State="IsOccupied" BoolValue="true"/>
+            <Condition Resource="Nest06" State="IsOccupied" BoolValue="false"/>
+            <Condition Resource="Station01" State="ProcessFinished" BoolValue="true"/>
+            <Condition Resource="Station02" State="ProcessFinished" BoolValue="true"/>
+            <Condition Resource="Station03" State="ProcessFinished" BoolValue="true"/>
+            <Condition Resource="Station04" State="ProcessFinished" BoolValue="true"/>
+            <Condition Resource="Station05" State="ProcessFinished" BoolValue="true"/>
+            <Condition Resource="Station06" State="ProcessFinished" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="IsMoving" BoolValue="false"/>
+            <Condition Resource="Self" State="InPosition" BoolValue="true"/>
+            <Condition Resource="Nest01" State="IsOccupied" BoolValue="false"/>
+            <Condition Resource="Station01" State="ProcessFinished" BoolValue="false"/>
+            <Condition Resource="Station02" State="ProcessFinished" BoolValue="false"/>
+            <Condition Resource="Station03" State="ProcessFinished" BoolValue="false"/>
+            <Condition Resource="Station04" State="ProcessFinished" BoolValue="false"/>
+            <Condition Resource="Station05" State="ProcessFinished" BoolValue="false"/>
+            <Condition Resource="Station06" State="ProcessFinished" BoolValue="false"/>
+          </FinishedConditions>
+        </SkillDefinition>
+        <SkillDefinition Name="ErrorQuit" TimeRequired="500">
+          <StartConditions>
+            <Condition Resource="Self" State="Error" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Error" BoolValue="false"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State ID="-1" Name="Error"/>
+        <State ID="0" Name="InPosition"/>
+        <State ID="1" Name="Moving"/>
+      </States>
+    </Resource>
+    <Resource Name ="Station00" Type="Group">
+      <SkillDefinitions>
+        <SkillDefinition Name="Start" TimeRequired="1000">
+          <StartConditions>
+            <Condition Resource="Machine" State="Running" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Running" BoolValue="true"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State Name="Running" ID="1"/>
+        <State Name="ProcessStarted" ID="2"/>
+        <State Name="ProcessFinished" ID="3"/>
+      </States>
+    </Resource>
+    <Resource Name ="Station01" Type="Group">
+      <SkillDefinitions>
+        <SkillDefinition Name="Start" TimeRequired="1000">
+          <StartConditions>
+            <Condition Resource="Machine" State="Running" BoolValue="true"/>
+          </StartConditions>
+          <FinishedConditions>
+            <Condition Resource="Nest01" State="Occupied" BoolValue="true"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State Name="Running" ID="1"/>
+        <State Name="ProcessStarted" ID="2"/>
+        <State Name="ProcessFinished" ID="3"/>
+      </States>
+    </Resource>
+    <Resource Name ="Machine" Type="Group">
+      <SkillDefinitions>
+        <SkillDefinition Name="Start" TimeRequired="50">
+          <StartConditions/>
+          <FinishedConditions>
+            <Condition Resource="Self" State="Running" BoolValue="true"/>
+          </FinishedConditions>
+        </SkillDefinition>
+      </SkillDefinitions>
+      <States>
+        <State Name="Running" ID="1"/>
+        <State Name="ProcessStarted" ID="2"/>
+        <State Name="ProcessFinished" ID="3"/>
+      </States>
+    </Resource>
+  </Resources>
+  <RunProcess>
+    <Process Name="Main" Resource="Machine" Parameters="">
+      <Sequence Name="Station00" Resource="Station00" Parameters="">
+        <SkillExecution Name="Start" Resource="Station00" Parameters="" />
+      </Sequence>
+      <Sequence Name="Station01" Resource="Station01" Parameters="">
+        <SkillExecution Name="Start" Resource="Station01" Parameters="" />
+      </Sequence>
+      <Process Name="Robot" Resource="SCARA" Parameters="">
+        <Sequence Name="Pick" Resource ="SCARA" Parameters="">
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="20"/>
+          <!-- 20 entspricht dabei einem bestimmten Pfad von der aktuellen Position zur Home Position, dieser Pfad ist bisher nur auf Roboter vorhanden-->
+          <SkillExecution Resource="Gripper" Name="Open"/>
+          <SkillExecution Resource="SCARA" Name="Move" Parameters="Home, Seperation, 23"/>
+          <!--Home,Seperation Position möglicherweise als virtuelle Resource?-->
+          <SkillExecution Resource="Gripper" Name="Close"/>
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="Home"/>
+        </Sequence>
+        <Sequence Name="Place" Resource="SCARA" Parameters="0">
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="Home"/>
+          <SkillExecution Resource="SCARA" Name="Move" Parameters="Home, NestAt1"/>
+          <SkillExecution Resource="Gripper" Name="Open"/>
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="Home"/>
+        </Sequence>
+        <Sequence Name="Remove" Resource="SCARA" Parameters="">
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="Home"/>
+          <SkillExecution Resource="Gripper" Name="Open"/>
+          <SkillExecution Resource="SCARA" Name="Move" Parameters="Home, NestAt6"/>
+          <SkillExecution Resource="Gripper" Name="Close"/>
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="Home"/>
+          <SkillExecution Resource="SCARA" Name="Move" Parameters="Home, Tray"/>
+          <SkillExecution Resource="Gripper" Name="Open"/>
+          <SkillExecution Resource="SCARA" Name="MoveHome" Parameters="Home"/>
+        </Sequence>
+      </Process>
+      <Sequence Name="Restart" Resource="RIT" Parameters="">
+        <SkillExecution Resource="RIT" Name="Turn" Parameters="1"/>
+      </Sequence>
+    </Process>
+    <Sequence Name="ErrorQuit" Resource="Machine" Parameters="">
+      <SkillExecution Resource="SCARA" Name="ErrorQuit"/>
+      <SkillExecution Resource="RIT" Name="ErrorQuit"/>
+      <SkillExecution Resource="Gripper" Name="ErrorQuit"/>
+    </Sequence>
+  </RunProcess>
+</Main>

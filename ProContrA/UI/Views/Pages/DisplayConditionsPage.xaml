@@ -1,0 +1,56 @@
+﻿<Page x:Class="ProContrA.UI.Views.Pages.DisplayConditionsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ProContrA.UI.Views.Pages"
+      xmlns:view ="clr-namespace:ProContrA.UI.ViewModels"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="DisplayConditionsPage">
+    <StackPanel Orientation="Vertical">
+        <StackPanel.DataContext>
+            <view:ConditionsViewModel/>
+        </StackPanel.DataContext>
+        <TreeView ItemsSource="{Binding Conditions}" Name="TV">
+            <TreeView.Resources>                
+                <!-- Hierarchical for complex condidtion (coupled with logic operator) -->
+                <HierarchicalDataTemplate ItemsSource="{Binding Children}" DataType="{x:Type view:ComplexConditionViewModel}">
+                    <StackPanel Orientation="Vertical" Background="{Binding BackgroundBrush}">
+                        <!--Display string value when collapsed and expanded-->
+                        <TextBlock Text="{Binding Value}"/>
+                        <!-- Display sub items only whenn expanded-->
+                        <Grid  Background="{Binding BackgroundBrush}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/> <!--1st column for list of logic operators-->
+                                <ColumnDefinition Width="*"/> <!--2nd column for treeview of subitems-->
+                            </Grid.ColumnDefinitions>
+                            <Grid Grid.Column="0" Margin="3,15"> <!-- List of logic operators within cmplex condition-->
+                                <ListView ItemsSource="{Binding LogicOperators}" Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Margin="1" />
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>                            
+                            <!-- Tree with subitems of complexcondition-->
+                            <TreeView ItemsSource="{Binding Children}" Grid.Column="1" Name="InnerTV" Margin="3"  Background="{Binding BackgroundBrush}" />
+                        </Grid>
+                    </StackPanel>
+                </HierarchicalDataTemplate>
+                
+                <!-- Datatemplate for simple conditions-->
+                <DataTemplate DataType="{x:Type view:SimpleConditionViewModel}">
+                    <TextBlock Text="{Binding Value}" Background="{Binding BackgroundBrush}" Padding="3"/>
+                </DataTemplate>
+                
+            </TreeView.Resources>
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
+        </TreeView>
+    </StackPanel>
+</Page>
